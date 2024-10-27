@@ -1,7 +1,6 @@
 name: budget_app
 description: "A new Flutter project."
-# The following line prevents the package from being accidentally published to
-# pub.dev using `flutter pub publish`. This is preferred for private packages.
+
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
 # The following defines the version and build number for your application.
@@ -30,11 +29,12 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  sqflite: ^2.0.0+3
-  path_provider: ^2.0.11
-  provider: ^6.0.0
-  charts_flutter: ^0.12.0
-  
+  fl_chart: ^0.60.0
+  sqflite: ^2.2.5+1  # Check for the latest version on pub.dev
+  path: ^1.8.3       # Required for using path-related functions in sqflite
+  # sqflite_common_ffi: ^2.0.0
+  # sqflite_common_ffi_web: ^0.4.5+3
+  syncfusion_flutter_charts: ^19.4.56
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

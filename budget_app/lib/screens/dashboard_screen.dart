@@ -1,34 +1,61 @@
 import 'package:flutter/material.dart';
-import 'package:charts_flutter/flutter.dart' as charts;
-import '../models/expense_models.dart'; // Ensure this contains the ExpenseData class
+import 'package:syncfusion_flutter_charts/charts.dart'; // Import Syncfusion charts
+import '../models/expense_models.dart';
 import '../services/db_helper.dart';
 
 class DashboardScreen extends StatelessWidget {
   final DBHelper dbHelper = DBHelper();
 
+  DashboardScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Budget Dashboard')),
+      appBar: AppBar(title: const Text('Budget Dashboard')),
       body: FutureBuilder<List<ExpenseData>>(
-        future: dbHelper.getExpenses(), // Ensure this returns List<ExpenseData>
+        future: dbHelper.getExpenses(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
           } else if (snapshot.hasData) {
             final expenses = snapshot.data!;
-            final expenseData = _prepareChartData(expenses);
+            double totalAmount =
+                expenses.fold(0, (sum, item) => sum + item.amount);
 
             return Column(
               children: [
-                SizedBox(
-                  height: 200,
-                  child: charts.PieChart(
-                    expenseData,
-                    animate: true,
-                    animationDuration: Duration(seconds: 1),
+                // Summary Section
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    'Total Expenses: \$${totalAmount.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                        fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                 ),
+                // Chart Section
+                Expanded(
+                  child: SfCartesianChart(
+                    title: ChartTitle(text: 'Expenses Overview'),
+                    legend: Legend(isVisible: true),
+                    primaryXAxis: CategoryAxis(),
+                    primaryYAxis: NumericAxis(),
+                    series: <ChartSeries>[
+                      PieSeries<ExpenseData, String>(
+                        dataSource: expenses,
+                        xValueMapper: (ExpenseData expense, _) =>
+                            expense.category,
+                        yValueMapper: (ExpenseData expense, _) =>
+                            expense.amount,
+                        name: 'Expenses',
+                        dataLabelSettings: DataLabelSettings(isVisible: true),
+                      ),
+                    ],
+                  ),
+                ),
+                // List of Expenses
                 Expanded(
                   child: ListView.builder(
                     itemCount: expenses.length,
@@ -45,7 +72,7 @@ class DashboardScreen extends StatelessWidget {
               ],
             );
           } else {
-            return Center(child: Text('No expenses found.'));
+            return const Center(child: Text('No expenses found.'));
           }
         },
       ),
@@ -53,36 +80,8 @@ class DashboardScreen extends StatelessWidget {
         onPressed: () {
           Navigator.pushNamed(context, '/expenseDetail');
         },
-        child: Icon(Icons.add),
+        child: const Icon(Icons.add),
       ),
     );
-  }
-
-  List<charts.Series<ExpenseData, String>> _prepareChartData(
-      List<ExpenseData> expenses) {
-    final data = expenses.fold<Map<String, double>>({}, (map, expense) {
-      map[expense.category] = (map[expense.category] ?? 0) + expense.amount;
-      return map;
-    });
-
-    // Create a list of ExpenseData for the chart
-    final List<ExpenseData> expenseData = data.entries.map((entry) {
-      return ExpenseData(
-        id: 0, // Dummy ID, adjust as necessary
-        category: entry.key,
-        description: "", // No description for aggregated data
-        amount: entry.value,
-        date: DateTime.now(), // Dummy date, adjust as necessary
-      );
-    }).toList();
-
-    return [
-      charts.Series<ExpenseData, String>(
-        id: 'Expenses',
-        data: expenseData,
-        domainFn: (ExpenseData expense, _) => expense.category,
-        measureFn: (ExpenseData expense, _) => expense.amount,
-      )
-    ];
   }
 }

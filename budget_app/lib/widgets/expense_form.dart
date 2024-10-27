@@ -6,7 +6,7 @@ class ExpenseForm extends StatefulWidget {
   final Function(ExpenseData) onSubmit;
   final ExpenseData? existingExpense;
 
-  ExpenseForm({required this.onSubmit, this.existingExpense});
+  const ExpenseForm({super.key, required this.onSubmit, this.existingExpense});
 
   @override
   _ExpenseFormState createState() => _ExpenseFormState();
@@ -50,7 +50,7 @@ class _ExpenseFormState extends State<ExpenseForm> {
         children: [
           TextFormField(
             controller: _categoryController,
-            decoration: InputDecoration(labelText: 'Category'),
+            decoration: const InputDecoration(labelText: 'Category'),
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter a category';
@@ -60,7 +60,7 @@ class _ExpenseFormState extends State<ExpenseForm> {
           ),
           TextFormField(
             controller: _descriptionController,
-            decoration: InputDecoration(labelText: 'Description'),
+            decoration: const InputDecoration(labelText: 'Description'),
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter a description';
@@ -70,7 +70,7 @@ class _ExpenseFormState extends State<ExpenseForm> {
           ),
           TextFormField(
             controller: _amountController,
-            decoration: InputDecoration(labelText: 'Amount'),
+            decoration: const InputDecoration(labelText: 'Amount'),
             keyboardType: TextInputType.number,
             validator: (value) {
               if (value == null || value.isEmpty) {
@@ -82,7 +82,7 @@ class _ExpenseFormState extends State<ExpenseForm> {
               return null;
             },
           ),
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
           ElevatedButton(
             onPressed: _submitForm,
             child: Text(widget.existingExpense == null

@@ -16,7 +16,7 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
 
   final DBHelper dbHelper = DBHelper();
 
-  void _saveExpense() {
+  void _saveExpense() async {
     if (_formKey.currentState!.validate()) {
       final expense = ExpenseData(
         id: 0,
@@ -26,9 +26,23 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
         date: DateTime.now(),
       );
 
-      dbHelper.insertExpense(expense);
-      Navigator.pop(context);
+      try {
+        await dbHelper.insertExpense(expense); // Await the insert operation
+        Navigator.pop(context); // Navigate back after insertion
+      } catch (error) {
+        // Handle any errors here (e.g., show a dialog)
+        print("Error saving expense: $error");
+      }
     }
+  }
+
+  @override
+  void dispose() {
+    // Dispose of the controllers when the widget is removed from the widget tree
+    _categoryController.dispose();
+    _descriptionController.dispose();
+    _amountController.dispose();
+    super.dispose();
   }
 
   @override
@@ -76,7 +90,7 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
               ElevatedButton(
                 onPressed: _saveExpense,
                 child: Text('Save Expense'),
-              )
+              ),
             ],
           ),
         ),
