@@ -1,83 +1,34 @@
-
-# Flutter Personal Budget Tracker App
+# Personal Budget Tracker - Flutter Project
 
 ## Overview
+The **Personal Budget Tracker** is a mobile application built using Flutter. It allows users to track their expenses and manage their budget through a user-friendly interface, with key features like expense categorization and visualizations for a clear financial overview.
 
-This is a **Personal Budget Tracker App** built using Flutter. The app helps users track their expenses, categorize them, and visualize the overall budget and spending patterns through charts. The app stores data locally and provides a simple, user-friendly interface to manage personal finances.
+## Learning Goals
+My main goal for this project was to gain hands-on experience with Flutter, especially with UI design, state management, and integrating chart libraries to create an intuitive experience for users. This was my first significant project in Flutter, so I was excited to explore how Flutter’s framework could be used to build effective and visually appealing applications.
 
 ## Features
+- **Dashboard**: An overview of budget and expenses with visual charts
+- **Expense Detail Screen**: Adding and viewing individual expenses
+- **Expense Categorization**: Organizes expenses by type
+- **Data Persistence**: Local storage using SQLite/shared preferences
+- **Charts**: Visual representation of budget data using Syncfusion Flutter Charts (version 27.1.56)
 
-- **Dashboard**: Overview of total expenses and categorized spending.
-- **Add/View Expenses**: Add new expenses with categories and view the list of expenses.
-- **Categorization**: Group expenses by categories such as Food, Transport, Entertainment, etc.
-- **Charts and Visualizations**: Visualize expenses through graphs and pie charts.
-- **Data Handling**: Expense data is stored locally using SQLite or Shared Preferences.
-- **Dummy Data**: Pre-loaded dummy data from a local JSON file for testing.
+## Code and Design Choices
+- **Syncfusion Charts**: Chose Syncfusion due to its flexibility in visualizing budget data and ease of integration with Flutter.
+- **State Management**: Managed state with Flutter’s built-in stateful widgets for simplicity and efficiency.
+- **Data Persistence**: Used SQLite for storing data locally, allowing the user’s budget data to remain accessible even after app closure.
+- **UI**: Designed for ease of use, ensuring users could access expense details, summaries, and charts without navigating multiple screens.
 
-## Getting Started
+## Challenges
+### Chart Integration
+The primary challenge was getting charts to display data effectively. Integrating Syncfusion charts required careful alignment of data models with the chart library, as it’s essential to ensure the app could pull and display data accurately.
 
-### Prerequisites
+### Approach to Solving Challenges
+1. **Documentation & Community Resources**: I explored Syncfusion documentation and Flutter forums to understand best practices for chart integration.
+2. **Experimentation**: Tried various chart types and configurations to find the best fit for representing budget data effectively.
+3. **Refinement**: Through testing, I fine-tuned chart properties for better readability and performance.
 
-- Install [Flutter](https://flutter.dev/docs/get-started/install)
-- Set up a code editor like [Visual Studio Code](https://code.visualstudio.com/) with the Flutter extension
-
-### Installation
-
-1. **Clone the repository**:
-   ```bash
-   git clone <repository_url>
-   cd flutter_budget_tracker_app
-   ```
-
-2. **Install dependencies**:
-   ```bash
-   flutter pub get
-   ```
-
-3. **Run the project**:
-   ```bash
-   flutter run
-   ```
-
-4. For web:
-   ```bash
-   flutter run -d chrome
-   ```
-
-### Screens
-
-1. **Dashboard Screen**:  
-   Displays an overview of expenses and visualizes the spending patterns with pie charts.
-   
-2. **Expense Detail Screen**:  
-   Allows the user to add or view expenses, categorize them, and view detailed descriptions.
-
-### Chart Visualization
-
-The app uses the `charts_flutter` package to display expenses in a pie chart. Each category's total amount is displayed as a slice in the chart, providing a quick visual representation of where the user's money is going.
-
-### Database Management
-
-Expense data is stored using SQLite or shared preferences to keep the budget and expenses locally. Data is also loaded from a JSON file during testing.
-
-## Project Structure
-
-```
-lib/
-|-- models/        # Contains data models (e.g., ExpenseData)
-|-- screens/       # Screens for the app (e.g., DashboardScreen, ExpenseDetailScreen)
-|-- services/      # Database and utility services (e.g., DBHelper for SQLite)
-|-- widgets/       # Reusable UI components
-```
-
-## Known Issues
-
-- Error: **The getter 'bodyText2' isn't defined**  
-   This issue arises due to the `charts_flutter` package being out of date. Update the Flutter dependencies or modify the code to use `labelLarge` instead of `bodyText2`.
-
-
+## Repository
+This project is public on GitHub. You can view it here: [GitHub Link to Flutter Project](#)
 
 ---
-
-**Author**: [Atharva Choudhari]  
-Feel free to contact me at [atharvachoudahri06@gmail.com] for any questions or feedback.
