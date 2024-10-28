@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:syncfusion_flutter_charts/charts.dart'; // Import Syncfusion charts
 import '../models/expense_models.dart';
-import '../services/db_helper.dart';
+import '../services/api_service.dart';
 
 class DashboardScreen extends StatelessWidget {
-  final DBHelper dbHelper = DBHelper();
+  final ApiService apiService = ApiService();
 
   DashboardScreen({super.key});
 
@@ -13,13 +12,19 @@ class DashboardScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Budget Dashboard')),
       body: FutureBuilder<List<ExpenseData>>(
-        future: dbHelper.getExpenses(),
+        future: apiService.getExpenses(),
         builder: (context, snapshot) {
+          // Show loading indicator while data is being fetched
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
+          }
+          // Show error message if there's an error
+          else if (snapshot.hasError) {
+            print('Error: ${snapshot.error}'); // Debugging output
             return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (snapshot.hasData) {
+          }
+          // Check if data is received
+          else if (snapshot.hasData) {
             final expenses = snapshot.data!;
             double totalAmount =
                 expenses.fold(0, (sum, item) => sum + item.amount);
@@ -32,29 +37,12 @@ class DashboardScreen extends StatelessWidget {
                   child: Text(
                     'Total Expenses: \$${totalAmount.toStringAsFixed(2)}',
                     style: const TextStyle(
-                        fontSize: 20, fontWeight: FontWeight.bold),
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-                // Chart Section
-                Expanded(
-                  child: SfCartesianChart(
-                    title: ChartTitle(text: 'Expenses Overview'),
-                    legend: Legend(isVisible: true),
-                    primaryXAxis: CategoryAxis(),
-                    primaryYAxis: NumericAxis(),
-                    series: <ChartSeries>[
-                      PieSeries<ExpenseData, String>(
-                        dataSource: expenses,
-                        xValueMapper: (ExpenseData expense, _) =>
-                            expense.category,
-                        yValueMapper: (ExpenseData expense, _) =>
-                            expense.amount,
-                        name: 'Expenses',
-                        dataLabelSettings: DataLabelSettings(isVisible: true),
-                      ),
-                    ],
-                  ),
-                ),
+
                 // List of Expenses
                 Expanded(
                   child: ListView.builder(
@@ -62,9 +50,10 @@ class DashboardScreen extends StatelessWidget {
                     itemBuilder: (context, index) {
                       return ListTile(
                         title: Text(expenses[index].description),
-                        subtitle: Text(expenses[index].category),
+                        subtitle: Text('Category: ${expenses[index].category}'),
                         trailing: Text(
-                            '\$${expenses[index].amount.toStringAsFixed(2)}'),
+                          '\$${expenses[index].amount.toStringAsFixed(2)}',
+                        ),
                       );
                     },
                   ),
@@ -76,6 +65,8 @@ class DashboardScreen extends StatelessWidget {
           }
         },
       ),
+
+      // Floating action button to add a new expense
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.pushNamed(context, '/expenseDetail');

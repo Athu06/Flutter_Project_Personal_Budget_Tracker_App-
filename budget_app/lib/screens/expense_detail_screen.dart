@@ -1,7 +1,6 @@
-// screens/expense_detail_screen.dart
 import 'package:flutter/material.dart';
-import '../models/expense_models.dart';
-import '../services/db_helper.dart';
+import 'package:http/http.dart' as http; // Import the http package
+import 'dart:convert'; // Import for JSON encoding
 
 class ExpenseDetailScreen extends StatefulWidget {
   @override
@@ -14,26 +13,60 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
 
-  final DBHelper dbHelper = DBHelper();
-
   void _saveExpense() async {
     if (_formKey.currentState!.validate()) {
-      final expense = ExpenseData(
-        id: 0,
-        category: _categoryController.text,
-        description: _descriptionController.text,
-        amount: double.parse(_amountController.text),
-        date: DateTime.now(),
-      );
+      final expense = {
+        "category": _categoryController.text,
+        "description": _descriptionController.text,
+        "amount": double.parse(_amountController.text),
+        "date": DateTime.now().toIso8601String(),
+      };
 
       try {
-        await dbHelper.insertExpense(expense); // Await the insert operation
-        Navigator.pop(context); // Navigate back after insertion
+        final response = await http.post(
+          Uri.parse(
+              'http://localhost:3000/expense'), // Change to your actual API endpoint
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(expense),
+        );
+
+        if (response.statusCode == 201) {
+          // Assuming a successful creation returns 201
+          // Show success message using SnackBar
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text('Expense Saved')));
+          Navigator.pop(context); // Navigate back after successful insertion
+        } else {
+          // Handle server error
+          print("Server error: ${response.statusCode}");
+          print("Response body: ${response.body}"); // Log the response body
+          _showErrorDialog("Server error: ${response.statusCode}");
+        }
       } catch (error) {
-        // Handle any errors here (e.g., show a dialog)
         print("Error saving expense: $error");
+        _showErrorDialog("Error saving expense: $error");
       }
     }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Error'),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
