@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/expense_models.dart'; // Import your ExpenseData model
 
-const String baseUrl = 'http://localhost:3000'; // Base URL of your Node.js API
+const String baseUrl =
+    'https://us-central1-stemious-hands-on-task.cloudfunctions.net/api'; // Base URL of your Node.js API
 
 class ApiService {
   // Fetch all expenses from the API
