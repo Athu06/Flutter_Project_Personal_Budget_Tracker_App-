@@ -49,10 +49,10 @@ class DashboardScreen extends StatelessWidget {
                     itemCount: expenses.length,
                     itemBuilder: (context, index) {
                       return ListTile(
-                        title: Text(expenses[index].description),
-                        subtitle: Text('Category: ${expenses[index].category}'),
+                        title: Text('Category: ${expenses[index].category}'),
+                        subtitle: Text(expenses[index].description),
                         trailing: Text(
-                          '\$${expenses[index].amount.toStringAsFixed(2)}',
+                          '\Rs ${expenses[index].amount.toStringAsFixed(2)}',
                         ),
                       );
                     },
