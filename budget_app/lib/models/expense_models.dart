@@ -1,5 +1,5 @@
 class ExpenseData {
-  final int id;
+  final String id;
   final String category;
   final String description;
   final double amount;
@@ -27,9 +27,7 @@ class ExpenseData {
   // Convert Map to ExpenseData for SQLite
   static ExpenseData fromMap(Map<String, dynamic> map) {
     return ExpenseData(
-      id: map['id'] != null
-          ? int.tryParse(map['id'].toString()) ?? 0
-          : 0, // Handle null
+      id: map['id'] != null ? map['id'] : "",
       category: map['category'] ?? 'Unknown', // Default value for category
       description: map['description'] ??
           'No description', // Default value for description
@@ -43,7 +41,7 @@ class ExpenseData {
   // Convert JSON to ExpenseData
   factory ExpenseData.fromJson(Map<String, dynamic> json) {
     return ExpenseData(
-      id: int.tryParse(json['id'].toString()) ?? 0, // Handle null
+      id: json["id"], // Handle null
       category: json['category'] ?? 'Unknown', // Default value for category
       description: json['description'] ??
           'No description', // Default value for description

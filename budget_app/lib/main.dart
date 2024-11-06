@@ -8,6 +8,8 @@ void main() {
 }
 
 class BudgetTrackerApp extends StatelessWidget {
+  const BudgetTrackerApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
