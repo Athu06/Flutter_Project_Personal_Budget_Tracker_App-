@@ -19,6 +19,7 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
   final TextEditingController _categoryController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
+  late Future<List<ExpenseData>> expensesFuture;
 
   @override
   void initState() {
@@ -48,6 +49,9 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Expense Updated')),
           );
+          setState(() {
+            expensesFuture = apiService.getExpenses();
+          });
         } else {
           // Add new expense
           final response = await http.post(
@@ -60,6 +64,7 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Expense Saved')),
             );
+            setState(() {}); // Refresh UI after save
           } else {
             throw Exception('Failed to add expense');
           }

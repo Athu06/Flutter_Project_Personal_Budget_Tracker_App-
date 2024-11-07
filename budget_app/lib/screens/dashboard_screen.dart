@@ -79,7 +79,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   ),
                                 ).then((_) {
                                   setState(() {
-                                    // Refresh list after editing
                                     expensesFuture = apiService.getExpenses();
                                   });
                                 });
@@ -88,7 +87,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             IconButton(
                               icon: const Icon(Icons.delete),
                               onPressed: () async {
-                                // Show confirmation dialog
                                 bool? confirmDelete = await showDialog<bool>(
                                   context: context,
                                   builder: (BuildContext context) {
@@ -124,7 +122,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                                   if (result) {
                                     // If deletion is successful, remove it from the list
-                                    setState(() {});
+                                    setState(() {
+                                      expensesFuture = apiService.getExpenses();
+                                    });
 
                                     // Optionally, refresh the list by calling the API again
                                     // expensesFuture = apiService.getExpenses();
@@ -162,7 +162,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.pushNamed(context, '/expenseDetail')
-              .then((_) => setState(() {}));
+              .then((_) => setState(() {
+                    expensesFuture = apiService.getExpenses();
+                  }));
         },
         child: const Icon(Icons.add),
       ),
