@@ -13,11 +13,59 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   final ApiService apiService = ApiService();
   late Future<List<ExpenseData>> expensesFuture;
+  DateTimeRange? _selectedDateRange;
+  String? _selectedCategory;
+
+  List<String> defaultCategories = [
+    'All',
+    'Food',
+    'Rent',
+    'Healthcare',
+    'Entertainment',
+    'Shopping',
+    'Other'
+  ];
 
   @override
   void initState() {
     super.initState();
     expensesFuture = apiService.getExpenses();
+  }
+
+  List<ExpenseData> _filterExpenses(List<ExpenseData> expenses) {
+    return expenses.where((expense) {
+      bool dateMatches = _selectedDateRange == null ||
+          (expense.date.isAfter(_selectedDateRange!.start
+                  .subtract(const Duration(days: 1))) &&
+              expense.date.isBefore(
+                  _selectedDateRange!.end.add(const Duration(days: 1))));
+
+      bool categoryMatches = _selectedCategory == null ||
+          _selectedCategory == 'All' ||
+          (_selectedCategory == 'Other' &&
+              !defaultCategories.contains(expense.category)) ||
+          (_selectedCategory != 'Other' &&
+              expense.category == _selectedCategory);
+
+      return dateMatches && categoryMatches;
+    }).toList();
+  }
+
+  Future<void> _selectDateRange(BuildContext context) async {
+    final DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(1970),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null && picked != _selectedDateRange) {
+      setState(() {
+        _selectedDateRange = picked;
+      });
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
   }
 
   @override
@@ -33,7 +81,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             print('Error: ${snapshot.error}');
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (snapshot.hasData) {
-            final expenseList = snapshot.data!;
+            final expenseList = _filterExpenses(snapshot.data!);
             double totalAmount =
                 expenseList.fold(0, (sum, item) => sum + item.amount);
 
@@ -42,23 +90,73 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Text(
-                    'Total Expenses: \Rs ${totalAmount.toStringAsFixed(2)}',
+                    'Total Expenses: Rs ${totalAmount.toStringAsFixed(2)}',
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          TextButton(
+                            onPressed: () => _selectDateRange(context),
+                            child: Text(
+                              _selectedDateRange == null
+                                  ? 'Select Date Range'
+                                  : '${_formatDate(_selectedDateRange!.start)} - ${_formatDate(_selectedDateRange!.end)}',
+                            ),
+                          ),
+                          if (_selectedDateRange != null)
+                            IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                setState(() {
+                                  _selectedDateRange = null;
+                                });
+                              },
+                            ),
+                        ],
+                      ),
+                      DropdownButton<String>(
+                        hint: const Text('Select Category'),
+                        value: _selectedCategory,
+                        items: defaultCategories.map((String category) {
+                          return DropdownMenuItem<String>(
+                            value: category,
+                            child: Text(category),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedCategory = value;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
                 Expanded(
                   child: ListView.builder(
                     itemCount: expenseList.length,
                     itemBuilder: (context, index) {
+                      String dateString = _formatDate(expenseList[index].date);
+
                       return ListTile(
                         title: Text('Category: ${expenseList[index].category}'),
-                        subtitle: Text(expenseList[index].description),
-                        contentPadding:
-                            const EdgeInsets.symmetric(horizontal: 16.0),
-                        leading: const SizedBox(width: 0),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                                'Description: ${expenseList[index].description}'),
+                            Text('Date: $dateString'),
+                          ],
+                        ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -67,21 +165,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               style:
                                   const TextStyle(fontWeight: FontWeight.bold),
                             ),
-                            const SizedBox(width: 8),
                             IconButton(
                               icon: const Icon(Icons.edit),
                               onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ExpenseDetailScreen(
-                                        expense: expenseList[index]),
-                                  ),
-                                ).then((_) {
-                                  setState(() {
-                                    expensesFuture = apiService.getExpenses();
+                                try {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ExpenseDetailScreen(
+                                          expense: expenseList[index]),
+                                    ),
+                                  ).then((_) {
+                                    setState(() {
+                                      expensesFuture = apiService.getExpenses();
+                                    });
                                   });
-                                });
+                                } catch (e) {
+                                  print('Error navigating to edit screen: $e');
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content: Text(
+                                            'Failed to open edit screen: $e')),
+                                  );
+                                }
                               },
                             ),
                             IconButton(
@@ -97,15 +203,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       actions: <Widget>[
                                         TextButton(
                                           onPressed: () {
-                                            Navigator.of(context).pop(
-                                                false); // Close dialog without deleting
+                                            Navigator.of(context).pop(false);
                                           },
                                           child: const Text('No'),
                                         ),
                                         TextButton(
                                           onPressed: () {
-                                            Navigator.of(context)
-                                                .pop(true); // Confirm delete
+                                            Navigator.of(context).pop(true);
                                           },
                                           child: const Text('Yes'),
                                         ),
@@ -115,28 +219,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 );
 
                                 if (confirmDelete == true) {
-                                  // Call the deleteExpense API to delete from the database
-                                  print("expenseList;${expenseList[index].id}");
                                   bool result = await apiService.deleteExpense(
                                       expenseList[index].id.toString());
-
                                   if (result) {
-                                    // If deletion is successful, remove it from the list
                                     setState(() {
                                       expensesFuture = apiService.getExpenses();
                                     });
-
-                                    // Optionally, refresh the list by calling the API again
-                                    // expensesFuture = apiService.getExpenses();
-
-                                    // Show success message
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
                                           content: Text(
                                               'Expense deleted successfully')),
                                     );
                                   } else {
-                                    // Show failure message if deletion failed
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
                                           content:

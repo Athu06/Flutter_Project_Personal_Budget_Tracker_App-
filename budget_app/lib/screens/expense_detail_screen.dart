@@ -16,30 +16,53 @@ class ExpenseDetailScreen extends StatefulWidget {
 class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
   final _formKey = GlobalKey<FormState>();
   final ApiService apiService = ApiService();
-  final TextEditingController _categoryController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
-  late Future<List<ExpenseData>> expensesFuture;
+  final TextEditingController _dateController =
+      TextEditingController(); // Controller for date
+  final TextEditingController _customCategoryController =
+      TextEditingController(); // Controller for custom category
+
+  late DateTime _selectedDate;
+  late String _selectedCategory;
+
+  // Define a list of expense categories
+  final List<String> _categories = [
+    "Food",
+    "Rent",
+    "Healthcare",
+    "Entertainment",
+    "Shopping",
+    "Other"
+  ];
 
   @override
   void initState() {
     super.initState();
 
-    // Populate fields if editing an existing expense
+    // Initialize date and other fields if editing an existing expense
     if (widget.expense != null) {
-      _categoryController.text = widget.expense!.category;
       _descriptionController.text = widget.expense!.description;
       _amountController.text = widget.expense!.amount.toString();
+      _selectedDate = widget.expense!.date;
+      _selectedCategory = widget.expense!.category;
+    } else {
+      _selectedDate = DateTime.now();
+      _selectedCategory = "Food"; // Default category
     }
+    _dateController.text = _selectedDate.toLocal().toString().split(' ')[0];
   }
 
   void _saveExpense() async {
     if (_formKey.currentState!.validate()) {
       final expenseData = {
-        "category": _categoryController.text,
+        "category": _selectedCategory == "Other"
+            ? _customCategoryController.text
+            : _selectedCategory,
         "description": _descriptionController.text,
         "amount": double.parse(_amountController.text),
-        "date": DateTime.now().toIso8601String(),
+        "date":
+            _selectedDate.toIso8601String(), // Save the date in ISO8601 format
       };
 
       try {
@@ -49,9 +72,6 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Expense Updated')),
           );
-          setState(() {
-            expensesFuture = apiService.getExpenses();
-          });
         } else {
           // Add new expense
           final response = await http.post(
@@ -100,9 +120,10 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
 
   @override
   void dispose() {
-    _categoryController.dispose();
     _descriptionController.dispose();
     _amountController.dispose();
+    _dateController.dispose();
+    _customCategoryController.dispose();
     super.dispose();
   }
 
@@ -118,12 +139,35 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
           key: _formKey,
           child: Column(
             children: [
-              TextFormField(
-                controller: _categoryController,
+              // Dropdown for selecting category
+              DropdownButtonFormField<String>(
+                value: _selectedCategory,
                 decoration: const InputDecoration(labelText: 'Category'),
+                items: _categories.map((category) {
+                  return DropdownMenuItem<String>(
+                    value: category,
+                    child: Text(category),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedCategory = value!;
+                  });
+                },
                 validator: (value) =>
-                    value!.isEmpty ? 'Enter a category' : null,
+                    value == null || value.isEmpty ? 'Select a category' : null,
               ),
+
+              // If "Other" is selected, show text field to input custom category
+              if (_selectedCategory == "Other")
+                TextFormField(
+                  controller: _customCategoryController,
+                  decoration:
+                      const InputDecoration(labelText: 'Custom Category'),
+                  validator: (value) =>
+                      value!.isEmpty ? 'Enter a custom category' : null,
+                ),
+
               TextFormField(
                 controller: _descriptionController,
                 decoration: const InputDecoration(labelText: 'Description'),
@@ -144,6 +188,12 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                   return null;
                 },
               ),
+              TextFormField(
+                controller: _dateController,
+                decoration: const InputDecoration(labelText: 'Date'),
+                readOnly: true, // Make the date field read-only
+                onTap: _selectDate,
+              ),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _saveExpense,
@@ -156,5 +206,24 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
         ),
       ),
     );
+  }
+
+  // Date picker function
+  Future<void> _selectDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+        _dateController.text = _selectedDate
+            .toLocal()
+            .toString()
+            .split(' ')[0]; // Update the displayed date
+      });
+    }
   }
 }
