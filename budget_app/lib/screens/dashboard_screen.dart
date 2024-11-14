@@ -14,7 +14,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final ApiService apiService = ApiService();
   late Future<List<ExpenseData>> expensesFuture;
   DateTimeRange? _selectedDateRange;
-  String? _selectedCategory;
+  String _selectedCategory = 'All';
+  TextEditingController _customCategoryController = TextEditingController();
 
   List<String> defaultCategories = [
     'All',
@@ -25,6 +26,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     'Shopping',
     'Other'
   ];
+
+  String _sortOption = 'Amount'; // Default sorting by amount
+  bool _isAscending = true; // Default sorting in ascending order
 
   @override
   void initState() {
@@ -40,8 +44,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               expense.date.isBefore(
                   _selectedDateRange!.end.add(const Duration(days: 1))));
 
-      bool categoryMatches = _selectedCategory == null ||
-          _selectedCategory == 'All' ||
+      bool categoryMatches = _selectedCategory == 'All' ||
           (_selectedCategory == 'Other' &&
               !defaultCategories.contains(expense.category)) ||
           (_selectedCategory != 'Other' &&
@@ -68,198 +71,345 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
   }
 
+  List<ExpenseData> _sortExpenses(List<ExpenseData> expenses) {
+    if (_sortOption == 'Amount') {
+      expenses.sort((a, b) => a.amount.compareTo(b.amount));
+    } else {
+      expenses.sort((a, b) => a.date.compareTo(b.date));
+    }
+
+    if (!_isAscending) {
+      expenses = expenses.reversed.toList();
+    }
+
+    return expenses;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Budget Dashboard')),
-      body: FutureBuilder<List<ExpenseData>>(
-        future: expensesFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            print('Error: ${snapshot.error}');
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (snapshot.hasData) {
-            final expenseList = _filterExpenses(snapshot.data!);
-            double totalAmount =
-                expenseList.fold(0, (sum, item) => sum + item.amount);
+      appBar: AppBar(
+        title: const Text('Budget Dashboard'),
+        centerTitle: true,
+        backgroundColor: const Color.fromARGB(255, 48, 217, 254),
+      ),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/Budget.jpeg',
+              fit: BoxFit.cover,
+            ),
+          ),
+          FutureBuilder<List<ExpenseData>>(
+            future: expensesFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              } else if (snapshot.hasData) {
+                final expenseList = _filterExpenses(snapshot.data!);
+                final sortedExpenseList = _sortExpenses(expenseList);
 
-            return Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Text(
-                    'Total Expenses: Rs ${totalAmount.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                if (sortedExpenseList.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      'No expenses available.',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
+                  );
+                }
+
+                double totalAmount =
+                    sortedExpenseList.fold(0, (sum, item) => sum + item.amount);
+
+                return Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        'Total Expenses: Rs ${totalAmount.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          TextButton(
-                            onPressed: () => _selectDateRange(context),
-                            child: Text(
-                              _selectedDateRange == null
-                                  ? 'Select Date Range'
-                                  : '${_formatDate(_selectedDateRange!.start)} - ${_formatDate(_selectedDateRange!.end)}',
-                            ),
+                          Row(
+                            children: [
+                              TextButton(
+                                onPressed: () => _selectDateRange(context),
+                                child: Text(
+                                  _selectedDateRange == null
+                                      ? 'Select Date Range'
+                                      : '${_formatDate(_selectedDateRange!.start)} - ${_formatDate(_selectedDateRange!.end)}',
+                                  style: const TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              if (_selectedDateRange != null)
+                                IconButton(
+                                  icon: const Icon(Icons.clear,
+                                      color: Colors.black),
+                                  onPressed: () {
+                                    setState(() {
+                                      _selectedDateRange = null;
+                                    });
+                                  },
+                                ),
+                            ],
                           ),
-                          if (_selectedDateRange != null)
-                            IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () {
-                                setState(() {
-                                  _selectedDateRange = null;
-                                });
-                              },
+                          DropdownButton<String>(
+                            hint: const Text(
+                              'Select Category',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
+                            value: _selectedCategory,
+                            items: defaultCategories.map((String category) {
+                              return DropdownMenuItem<String>(
+                                value: category,
+                                child: Text(category,
+                                    style:
+                                        const TextStyle(color: Colors.black)),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedCategory = value!;
+                                if (_selectedCategory != 'Other') {
+                                  _customCategoryController.clear();
+                                }
+                              });
+                            },
+                          ),
                         ],
                       ),
-                      DropdownButton<String>(
-                        hint: const Text('Select Category'),
-                        value: _selectedCategory,
-                        items: defaultCategories.map((String category) {
-                          return DropdownMenuItem<String>(
-                            value: category,
-                            child: Text(category),
+                    ),
+                    if (_selectedCategory == 'Other')
+                      TextFormField(
+                        controller: _customCategoryController,
+                        decoration:
+                            const InputDecoration(labelText: 'Custom Category'),
+                        validator: (value) =>
+                            value!.isEmpty ? 'Enter a custom category' : null,
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          DropdownButton<String>(
+                            value: _sortOption,
+                            items: ['Amount', 'Date']
+                                .map(
+                                    (String option) => DropdownMenuItem<String>(
+                                          value: option,
+                                          child: Text(option),
+                                        ))
+                                .toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                _sortOption = value!;
+                              });
+                            },
+                          ),
+                          DropdownButton<bool>(
+                            value: _isAscending,
+                            items: [
+                              DropdownMenuItem<bool>(
+                                value: true,
+                                child: Text('Ascending'),
+                              ),
+                              DropdownMenuItem<bool>(
+                                value: false,
+                                child: Text('Descending'),
+                              ),
+                            ],
+                            onChanged: (value) {
+                              setState(() {
+                                _isAscending = value!;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: sortedExpenseList.length,
+                        itemBuilder: (context, index) {
+                          String dateString =
+                              _formatDate(sortedExpenseList[index].date);
+
+                          return ListTile(
+                            title: Text(
+                              'Category: ${sortedExpenseList[index].category}',
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Description: ${sortedExpenseList[index].description}',
+                                  style: const TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  'Date: $dateString',
+                                  style: const TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Rs ${sortedExpenseList[index].amount.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                    fontSize: 18,
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.edit,
+                                      color: Colors.black),
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            ExpenseDetailScreen(
+                                                expense:
+                                                    sortedExpenseList[index]),
+                                      ),
+                                    ).then((_) {
+                                      setState(() {
+                                        expensesFuture =
+                                            apiService.getExpenses();
+                                      });
+                                    });
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete,
+                                      color: Colors.black),
+                                  onPressed: () async {
+                                    // Show confirmation dialog before deletion
+                                    bool? confirmDelete =
+                                        await showDialog<bool>(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return AlertDialog(
+                                          title: const Text('Delete Expense'),
+                                          content: const Text(
+                                              'Do you want to delete this expense?'),
+                                          actions: <Widget>[
+                                            TextButton(
+                                              onPressed: () {
+                                                Navigator.of(context).pop(
+                                                    false); // User pressed 'No'
+                                              },
+                                              child: const Text('No'),
+                                            ),
+                                            TextButton(
+                                              onPressed: () {
+                                                Navigator.of(context).pop(
+                                                    true); // User pressed 'Yes'
+                                              },
+                                              child: const Text('Yes'),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    );
+
+                                    // If the user confirmed the deletion
+                                    if (confirmDelete == true) {
+                                      bool result =
+                                          await apiService.deleteExpense(
+                                              sortedExpenseList[index].id);
+                                      if (result) {
+                                        setState(() {
+                                          expensesFuture = apiService
+                                              .getExpenses(); // Refresh the list
+                                        });
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                              content: Text(
+                                                  'Expense deleted successfully')),
+                                        );
+                                      } else {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                              content: Text(
+                                                  'Failed to delete expense')),
+                                        );
+                                      }
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
                           );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedCategory = value;
-                          });
                         },
                       ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: expenseList.length,
-                    itemBuilder: (context, index) {
-                      String dateString = _formatDate(expenseList[index].date);
-
-                      return ListTile(
-                        title: Text('Category: ${expenseList[index].category}'),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                                'Description: ${expenseList[index].description}'),
-                            Text('Date: $dateString'),
-                          ],
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Rs ${expenseList[index].amount.toStringAsFixed(2)}',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.edit),
-                              onPressed: () {
-                                try {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => ExpenseDetailScreen(
-                                          expense: expenseList[index]),
-                                    ),
-                                  ).then((_) {
-                                    setState(() {
-                                      expensesFuture = apiService.getExpenses();
-                                    });
-                                  });
-                                } catch (e) {
-                                  print('Error navigating to edit screen: $e');
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                        content: Text(
-                                            'Failed to open edit screen: $e')),
-                                  );
-                                }
-                              },
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete),
-                              onPressed: () async {
-                                bool? confirmDelete = await showDialog<bool>(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return AlertDialog(
-                                      title: const Text('Delete Expense'),
-                                      content: const Text(
-                                          'Do you want to delete this expense?'),
-                                      actions: <Widget>[
-                                        TextButton(
-                                          onPressed: () {
-                                            Navigator.of(context).pop(false);
-                                          },
-                                          child: const Text('No'),
-                                        ),
-                                        TextButton(
-                                          onPressed: () {
-                                            Navigator.of(context).pop(true);
-                                          },
-                                          child: const Text('Yes'),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                );
-
-                                if (confirmDelete == true) {
-                                  bool result = await apiService.deleteExpense(
-                                      expenseList[index].id.toString());
-                                  if (result) {
-                                    setState(() {
-                                      expensesFuture = apiService.getExpenses();
-                                    });
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                          content: Text(
-                                              'Expense deleted successfully')),
-                                    );
-                                  } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                          content:
-                                              Text('Failed to delete expense')),
-                                    );
-                                  }
-                                }
-                              },
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            );
-          } else {
-            return const Center(child: Text('No expenses found.'));
-          }
-        },
+                    ),
+                  ],
+                );
+              } else {
+                return const Center(
+                  child: Text('No expenses available.'),
+                );
+              }
+            },
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.pushNamed(context, '/expenseDetail')
-              .then((_) => setState(() {
-                    expensesFuture = apiService.getExpenses();
-                  }));
+          // Navigate to Add Expense Screen (Assuming you have an add screen)
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => ExpenseDetailScreen()),
+          ).then((_) {
+            setState(() {
+              expensesFuture = apiService.getExpenses();
+            });
+          });
         },
+        backgroundColor: Colors.blue,
         child: const Icon(Icons.add),
       ),
     );
