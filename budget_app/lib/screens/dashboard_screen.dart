@@ -33,7 +33,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    expensesFuture = apiService.getExpenses();
+    expensesFuture = apiService.getExpensesByType(_selectedCategory);
   }
 
   List<ExpenseData> _filterExpenses(List<ExpenseData> expenses) {
@@ -315,7 +315,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     ).then((_) {
                                       setState(() {
                                         expensesFuture =
-                                            apiService.getExpenses();
+                                            apiService.getExpensesByType(
+                                                _selectedCategory);
                                       });
                                     });
                                   },
@@ -360,8 +361,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                               sortedExpenseList[index].id);
                                       if (result) {
                                         setState(() {
-                                          expensesFuture = apiService
-                                              .getExpenses(); // Refresh the list
+                                          expensesFuture =
+                                              apiService.getExpensesByType(
+                                                  _selectedCategory); // Refresh the list
                                         });
                                         ScaffoldMessenger.of(context)
                                             .showSnackBar(
@@ -405,7 +407,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             MaterialPageRoute(builder: (context) => ExpenseDetailScreen()),
           ).then((_) {
             setState(() {
-              expensesFuture = apiService.getExpenses();
+              expensesFuture = apiService.getExpensesByType(_selectedCategory);
             });
           });
         },
