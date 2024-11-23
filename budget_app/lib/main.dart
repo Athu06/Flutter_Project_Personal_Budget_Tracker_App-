@@ -1,14 +1,19 @@
-// main.dart
+import 'package:budget_app/firebase_options.dart';
+import 'package:budget_app/screens/auth.dart';
 import 'package:flutter/material.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/expense_detail_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-void main() {
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(BudgetTrackerApp());
 }
 
 class BudgetTrackerApp extends StatelessWidget {
-  const BudgetTrackerApp({super.key});
+  const BudgetTrackerApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -17,8 +22,9 @@ class BudgetTrackerApp extends StatelessWidget {
       theme: ThemeData(primarySwatch: Colors.blue),
       initialRoute: '/',
       routes: {
-        '/': (context) => DashboardScreen(),
-        '/expenseDetail': (context) => ExpenseDetailScreen(),
+        '/': (context) => const Auth(),
+        '/dashboard': (context) => const DashboardScreen(),
+        '/expenseDetail': (context) => const ExpenseDetailScreen(),
       },
     );
   }

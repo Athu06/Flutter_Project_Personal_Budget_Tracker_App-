@@ -1,5 +1,4 @@
 import 'package:path/path.dart';
-import 'package:sqflite/sqflite.dart';
 import '../models/expense_models.dart';
 
 class DBHelper {

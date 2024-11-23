@@ -15,7 +15,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   late Future<List<ExpenseData>> expensesFuture;
   DateTimeRange? _selectedDateRange;
   String _selectedCategory = 'All';
-  TextEditingController _customCategoryController = TextEditingController();
+  final TextEditingController _customCategoryController = TextEditingController();
 
   List<String> defaultCategories = [
     'All',
@@ -203,14 +203,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ],
                       ),
                     ),
-                    if (_selectedCategory == 'Other')
-                      TextFormField(
-                        controller: _customCategoryController,
-                        decoration:
-                            const InputDecoration(labelText: 'Custom Category'),
-                        validator: (value) =>
-                            value!.isEmpty ? 'Enter a custom category' : null,
-                      ),
                     Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Row(
@@ -233,7 +225,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                           DropdownButton<bool>(
                             value: _isAscending,
-                            items: [
+                            items: const [
                               DropdownMenuItem<bool>(
                                 value: true,
                                 child: Text('Ascending'),
@@ -252,7 +244,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ],
                       ),
                     ),
-                    Expanded(
+                     sortedExpenseList.isEmpty
+                        ? const Center(
+                            child: Text(
+                            'No expenses available.',
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                      ),
+                    ))
+                   : Expanded(
                       child: ListView.builder(
                         itemCount: sortedExpenseList.length,
                         itemBuilder: (context, index) {
@@ -390,11 +392,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ],
                 );
-              } else {
-                return const Center(
-                  child: Text('No expenses available.'),
-                );
-              }
+              } 
+              return Container();
             },
           ),
         ],
@@ -404,7 +403,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           // Navigate to Add Expense Screen (Assuming you have an add screen)
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => ExpenseDetailScreen()),
+            MaterialPageRoute(builder: (context) => const ExpenseDetailScreen()),
           ).then((_) {
             setState(() {
               expensesFuture = apiService.getExpensesByType(_selectedCategory);

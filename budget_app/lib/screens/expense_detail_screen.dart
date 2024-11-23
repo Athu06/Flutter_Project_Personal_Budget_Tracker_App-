@@ -66,9 +66,9 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
       };
 
       try {
-        if (widget.expense != null && widget.expense!.id != null) {
+        if (widget.expense != null) {
           // Update existing expense
-          await apiService.updateExpense(widget.expense!.id!, expenseData);
+          await apiService.updateExpense(widget.expense!.id, expenseData);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Expense Updated')),
           );
