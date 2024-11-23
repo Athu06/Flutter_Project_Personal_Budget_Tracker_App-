@@ -95,7 +95,7 @@ class _LoginCardState extends State<LoginCard> {
           child: Form(
             key: _formKey,
             child: Column(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: MainAxisSize.min,   
               children: <Widget>[
                 TextFormField(
                   controller: _emailController,

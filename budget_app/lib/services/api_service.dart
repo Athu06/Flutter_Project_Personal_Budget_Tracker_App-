@@ -20,19 +20,6 @@ class ApiService {
     }
   }
 
-  // /// Fetch all expenses
-  // Future<List<ExpenseData>> getExpenses() async {
-  //   final Uri uri = Uri.parse('$baseUrl/expenses');
-  //   final response = await http.get(uri);
-
-  //   if (response.statusCode == 200) {
-  //     final List<dynamic> data = json.decode(response.body);
-  //     return data.map((expense) => ExpenseData.fromJson(expense)).toList();
-  //   } else {
-  //     throw Exception('Failed to load expenses');
-  //   }
-  // }
-
   /// Update an existing expense.
   Future<void> updateExpense(
       String id, Map<String, dynamic> expenseData) async {

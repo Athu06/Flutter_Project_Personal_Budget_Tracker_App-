@@ -14,11 +14,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final ApiService apiService = ApiService();
   late Future<List<ExpenseData>> expensesFuture;
   DateTimeRange? _selectedDateRange;
-  String _selectedCategory = 'All';
+  String _selectedCategory = 'all';
   final TextEditingController _customCategoryController = TextEditingController();
 
   List<String> defaultCategories = [
-    'All',
+    'all',
     'Food',
     'Rent',
     'Healthcare',
@@ -44,7 +44,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               expense.date.isBefore(
                   _selectedDateRange!.end.add(const Duration(days: 1))));
 
-      bool categoryMatches = _selectedCategory == 'All' ||
+      bool categoryMatches = _selectedCategory == 'all' ||
           (_selectedCategory == 'Other' &&
               !defaultCategories.contains(expense.category)) ||
           (_selectedCategory != 'Other' &&
@@ -193,11 +193,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             }).toList(),
                             onChanged: (value) {
                               setState(() {
+                                      // Update _selectedCategory first
                                 _selectedCategory = value!;
                                 if (_selectedCategory != 'Other') {
                                   _customCategoryController.clear();
                                 }
-                              });
+                                // Then fetch the filtered data using the updated value
+                                expensesFuture = apiService.getExpensesByType(_selectedCategory);
+                                      });
                             },
                           ),
                         ],
