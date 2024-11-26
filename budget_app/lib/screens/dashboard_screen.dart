@@ -1,4 +1,5 @@
 import 'package:budget_app/screens/expense_detail_screen.dart';
+import 'package:budget_app/screens/filter_screen.dart';
 import 'package:flutter/material.dart';
 import '../models/expense_models.dart';
 import '../services/api_service.dart';
@@ -14,11 +15,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final ApiService apiService = ApiService();
   late Future<List<ExpenseData>> expensesFuture;
   DateTimeRange? _selectedDateRange;
-  String _selectedCategory = 'all';
-  final TextEditingController _customCategoryController = TextEditingController();
+  String _selectedCategory = 'All';
 
   List<String> defaultCategories = [
-    'all',
+    'All',
     'Food',
     'Rent',
     'Healthcare',
@@ -33,7 +33,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    expensesFuture = apiService.getExpensesByType(_selectedCategory);
+    expensesFuture = apiService.getExpenses
+    ();
   }
 
   List<ExpenseData> _filterExpenses(List<ExpenseData> expenses) {
@@ -44,7 +45,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               expense.date.isBefore(
                   _selectedDateRange!.end.add(const Duration(days: 1))));
 
-      bool categoryMatches = _selectedCategory == 'all' ||
+      bool categoryMatches = _selectedCategory == 'All' ||
           (_selectedCategory == 'Other' &&
               !defaultCategories.contains(expense.category)) ||
           (_selectedCategory != 'Other' &&
@@ -112,18 +113,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 final expenseList = _filterExpenses(snapshot.data!);
                 final sortedExpenseList = _sortExpenses(expenseList);
 
-                if (sortedExpenseList.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      'No expenses available.',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+              if (sortedExpenseList.isEmpty) {
+                return const Center(
+                  child: Text(
+                    'No expenses available.',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
-                  );
-                }
+                  ),
+                );
+              }
 
                 double totalAmount =
                     sortedExpenseList.fold(0, (sum, item) => sum + item.amount);
@@ -141,123 +142,141 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              TextButton(
-                                onPressed: () => _selectDateRange(context),
-                                child: Text(
-                                  _selectedDateRange == null
-                                      ? 'Select Date Range'
-                                      : '${_formatDate(_selectedDateRange!.start)} - ${_formatDate(_selectedDateRange!.end)}',
-                                  style: const TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              if (_selectedDateRange != null)
-                                IconButton(
-                                  icon: const Icon(Icons.clear,
-                                      color: Colors.black),
-                                  onPressed: () {
-                                    setState(() {
-                                      _selectedDateRange = null;
-                                    });
-                                  },
-                                ),
-                            ],
-                          ),
-                          DropdownButton<String>(
-                            hint: const Text(
-                              'Select Category',
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            value: _selectedCategory,
-                            items: defaultCategories.map((String category) {
-                              return DropdownMenuItem<String>(
-                                value: category,
-                                child: Text(category,
-                                    style:
-                                        const TextStyle(color: Colors.black)),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              setState(() {
-                                      // Update _selectedCategory first
-                                _selectedCategory = value!;
-                                if (_selectedCategory != 'Other') {
-                                  _customCategoryController.clear();
-                                }
-                                // Then fetch the filtered data using the updated value
-                                expensesFuture = apiService.getExpensesByType(_selectedCategory);
-                                      });
-                            },
-                          ),
-                        ],
+                    OutlinedButton(style: ButtonStyle(    
+                      foregroundColor: MaterialStateProperty.all<Color>(Colors.blue),
                       ),
+                    onPressed: () {
+                      // Navigate to Add Expense Screen (Assuming you have an add screen)
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const FilterScreen()),
+                      ).then((_) {
+                        setState(() {
+                          expensesFuture = apiService.getExpenses
+                          ();
+                        });
+                      });
+                    }, 
+                    child: Text("Select Filter")
                     ),
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          DropdownButton<String>(
-                            value: _sortOption,
-                            items: ['Amount', 'Date']
-                                .map(
-                                    (String option) => DropdownMenuItem<String>(
-                                          value: option,
-                                          child: Text(option),
-                                        ))
-                                .toList(),
-                            onChanged: (value) {
-                              setState(() {
-                                _sortOption = value!;
-                              });
-                            },
-                          ),
-                          DropdownButton<bool>(
-                            value: _isAscending,
-                            items: const [
-                              DropdownMenuItem<bool>(
-                                value: true,
-                                child: Text('Ascending'),
-                              ),
-                              DropdownMenuItem<bool>(
-                                value: false,
-                                child: Text('Descending'),
-                              ),
-                            ],
-                            onChanged: (value) {
-                              setState(() {
-                                _isAscending = value!;
-                              });
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                     sortedExpenseList.isEmpty
-                        ? const Center(
-                            child: Text(
-                            'No expenses available.',
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                      ),
-                    ))
-                   : Expanded(
+                    // Padding(
+                    //   padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    //   child: Row(
+                    //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    //     children: [
+                    //       Row(
+                    //         children: [
+                    //           TextButton(
+                    //             onPressed: () => _selectDateRange(context),
+                    //             child: Text(
+                    //               _selectedDateRange == null
+                    //                   ? 'Select Date Range'
+                    //                   : '${_formatDate(_selectedDateRange!.start)} - ${_formatDate(_selectedDateRange!.end)}',
+                    //               style: const TextStyle(
+                    //                 color: Colors.black,
+                    //                 fontSize: 18,
+                    //                 fontWeight: FontWeight.bold,
+                    //               ),
+                    //             ),
+                    //           ),
+                    //           if (_selectedDateRange != null)
+                    //             IconButton(
+                    //               icon: const Icon(Icons.clear,
+                    //                   color: Colors.black),
+                    //               onPressed: () {
+                    //                 setState(() {
+                    //                   _selectedDateRange = null;
+                    //                 });
+                    //               },
+                    //             ),
+                    //         ],
+                    //       ),
+                    //       DropdownButton<String>(
+                    //         hint: const Text(
+                    //           'Select Category',
+                    //           style: TextStyle(
+                    //             color: Colors.black,
+                    //             fontSize: 18,
+                    //             fontWeight: FontWeight.bold,
+                    //           ),
+                    //         ),
+                    //         value: _selectedCategory,
+                    //         items: defaultCategories.map((String category) {
+                    //           return DropdownMenuItem<String>(
+                    //             value: category,
+                    //             child: Text(category,
+                    //                 style:
+                    //                     const TextStyle(color: Colors.black)),
+                    //           );
+                    //         }).toList(),
+                    //         onChanged: (value) {
+                    //           setState(() {
+                    //                   // Update _selectedCategory first
+                    //             _selectedCategory = value!;
+                    //             if (_selectedCategory != 'Other') {
+                    //               _customCategoryController.clear();
+                    //             }
+                    //             // Then fetch the filtered data using the updated value
+                    //             expensesFuture = apiService.getExpenses
+                    // (_selectedCategory);
+                    //                   });
+                    //         },
+                    //       ),
+                    //     ],
+                    //   ),
+                    // ),
+                    // Padding(
+                    //   padding: const EdgeInsets.all(16.0),
+                    //   child: Row(
+                    //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    //     children: [
+                    //       DropdownButton<String>(
+                    //         value: _sortOption,
+                    //         items: ['Amount', 'Date']
+                    //             .map(
+                    //                 (String option) => DropdownMenuItem<String>(
+                    //                       value: option,
+                    //                       child: Text(option),
+                    //                     ))
+                    //             .toList(),
+                    //         onChanged: (value) {
+                    //           setState(() {
+                    //             _sortOption = value!;
+                    //           });
+                    //         },
+                    //       ),
+                    //       DropdownButton<bool>(
+                    //         value: _isAscending,
+                    //         items: const [
+                    //           DropdownMenuItem<bool>(
+                    //             value: true,
+                    //             child: Text('Ascending'),
+                    //           ),
+                    //           DropdownMenuItem<bool>(
+                    //             value: false,
+                    //             child: Text('Descending'),
+                    //           ),
+                    //         ],
+                    //         onChanged: (value) {
+                    //           setState(() {
+                    //             _isAscending = value!;
+                    //           });
+                    //         },
+                    //       ),
+                    //     ],
+                    //   ),
+                    // ),
+                    //  sortedExpenseList.isEmpty
+                    //     ? const Center(
+                    //         child: Text(
+                    //         'No expenses available.',
+                    //         style: TextStyle(
+                    //           color: Colors.black,
+                    //           fontSize: 18,
+                    //           fontWeight: FontWeight.bold,
+                    //   ),
+                    // ))
+                   Expanded(
                       child: ListView.builder(
                         itemCount: sortedExpenseList.length,
                         itemBuilder: (context, index) {
@@ -320,8 +339,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     ).then((_) {
                                       setState(() {
                                         expensesFuture =
-                                            apiService.getExpensesByType(
-                                                _selectedCategory);
+                                            apiService.getExpenses
+                                            (
+                                                );
                                       });
                                     });
                                   },
@@ -367,8 +387,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       if (result) {
                                         setState(() {
                                           expensesFuture =
-                                              apiService.getExpensesByType(
-                                                  _selectedCategory); // Refresh the list
+                                              apiService.getExpenses
+                                              (
+                                                  ); // Refresh the list
                                         });
                                         ScaffoldMessenger.of(context)
                                             .showSnackBar(
@@ -409,7 +430,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             MaterialPageRoute(builder: (context) => const ExpenseDetailScreen()),
           ).then((_) {
             setState(() {
-              expensesFuture = apiService.getExpensesByType(_selectedCategory);
+              expensesFuture = apiService.getExpenses
+              ();
             });
           });
         },

@@ -11,32 +11,43 @@ void main() {
 class Auth extends StatelessWidget {
   const Auth({Key? key}) : super(key: key);
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: DefaultTabController(
-        length: 2,
-        child: Scaffold(
-          appBar: AppBar(
-            title: const Text('Login & Signup'),
-            bottom: const TabBar(
-              tabs: [
-                Tab(text: 'Login'),
-                Tab(text: 'Signup'),
-              ],
-            ),
-          ),
-          body: const TabBarView(
-            children: [
-              LoginCard(),
-              SignupCard(),
+@override
+Widget build(BuildContext context) {
+  return MaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: DefaultTabController(
+      length: 2, // Number of tabs
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Login & Signup'),
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Login'),
+              Tab(text: 'Signup'),
             ],
           ),
         ),
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: Image.asset(
+                'assets/Budget.jpeg',
+                fit: BoxFit.cover,
+              ),
+            ),
+            const TabBarView(
+              children: [
+                LoginCard(),
+                SignupCard(),
+              ],
+            ),
+          ],
+        ),
       ),
-    );
-  }
+    ),
+  );
+}
+
 }
 
 class LoginCard extends StatefulWidget {

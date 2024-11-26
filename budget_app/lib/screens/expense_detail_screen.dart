@@ -53,50 +53,49 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
     _dateController.text = _selectedDate.toLocal().toString().split(' ')[0];
   }
 
-  void _saveExpense() async {
-    if (_formKey.currentState!.validate()) {
-      final expenseData = {
-        "category": _selectedCategory == "Other"
-            ? _customCategoryController.text
-            : _selectedCategory,
-        "description": _descriptionController.text,
-        "amount": double.parse(_amountController.text),
-        "date":
-            _selectedDate.toIso8601String(), // Save the date in ISO8601 format
+void _saveExpense() async {
+  if (_formKey.currentState!.validate()) {
+    final expenseData = {
+      "category": _selectedCategory == "Other"
+          ? _customCategoryController.text
+          : _selectedCategory,
+      "description": _descriptionController.text,
+      "amount": double.parse(_amountController.text),
+      "date": _selectedDate.millisecondsSinceEpoch, 
       };
 
-      try {
-        if (widget.expense != null) {
-          // Update existing expense
-          await apiService.updateExpense(widget.expense!.id, expenseData);
+    try {
+      if (widget.expense != null) {
+        // Update existing expense
+        await apiService.updateExpense(widget.expense!.id, expenseData);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Expense Updated')),
+        );
+      } else {
+        // Add new expense
+        final response = await http.post(
+          Uri.parse('${apiService.baseUrl}/expense'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(expenseData),
+        );
+
+        if (response.statusCode == 201) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Expense Updated')),
+            const SnackBar(content: Text('Expense Saved')),
           );
+          setState(() {}); // Refresh UI after save
         } else {
-          // Add new expense
-          final response = await http.post(
-            Uri.parse('${apiService.baseUrl}/expense'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode(expenseData),
-          );
-
-          if (response.statusCode == 201) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Expense Saved')),
-            );
-            setState(() {}); // Refresh UI after save
-          } else {
-            throw Exception('Failed to add expense');
-          }
+          throw Exception('Failed to add expense');
         }
-
-        Navigator.pop(context, true); // Return success
-      } catch (error) {
-        print("Error saving expense: $error");
-        _showErrorDialog("Error saving expense: $error");
       }
+
+      Navigator.pop(context, true); // Return success
+    } catch (error) {
+      print("Error saving expense: $error");
+      _showErrorDialog("Error saving expense: $error");
     }
   }
+}
 
   void _showErrorDialog(String message) {
     showDialog(
