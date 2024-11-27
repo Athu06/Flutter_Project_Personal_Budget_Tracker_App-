@@ -3,6 +3,7 @@ import 'package:budget_app/screens/expense_detail_screen.dart';
 import 'package:flutter/material.dart';
 import '../models/expense_models.dart';
 import '../services/api_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Make sure this is included at the top
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -38,23 +39,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
     ();
   }
 
-  List<ExpenseData> _filterExpenses(List<ExpenseData> expenses) {
-    return expenses.where((expense) {
-      bool dateMatches = _selectedDateRange == null ||
-          (expense.date.isAfter(_selectedDateRange!.start
-                  .subtract(const Duration(days: 1))) &&
-              expense.date.isBefore(
-                  _selectedDateRange!.end.add(const Duration(days: 1))));
+List<ExpenseData> _filterExpenses(List<ExpenseData> expenses) {
+  return expenses.where((expense) {
+    // Convert Timestamp to DateTime before comparing
+    DateTime expenseDate = expense.date.toDate();
 
-      bool categoryMatches = _selectedCategory == 'All' ||
-          (_selectedCategory == 'Other' &&
-              !defaultCategories.contains(expense.category)) ||
-          (_selectedCategory != 'Other' &&
-              expense.category == _selectedCategory);
+    // Date matching logic
+    bool dateMatches = _selectedDateRange == null ||
+        (expenseDate.isAfter(
+                _selectedDateRange!.start.subtract(const Duration(days: 1))) &&
+            expenseDate.isBefore(
+                _selectedDateRange!.end.add(const Duration(days: 1))));
 
-      return dateMatches && categoryMatches;
-    }).toList();
-  }
+    // Category matching logic
+    bool categoryMatches = _selectedCategory == 'All' ||
+        (_selectedCategory == 'Other' &&
+            !defaultCategories.contains(expense.category)) ||
+        (_selectedCategory != 'Other' && expense.category == _selectedCategory);
+
+    return dateMatches && categoryMatches;
+  }).toList();
+}
+
 
   Future<void> _selectDateRange(BuildContext context) async {
     final DateTimeRange? picked = await showDateRangePicker(
@@ -73,16 +79,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String _formatDate(DateTime date) {
     return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
   }
+
+
+
 void fetchExpenses() {
   setState(() {
     expensesFuture = apiService.getExpenses(
       expenseType: _selectedCategory != 'All' ? _selectedCategory : "All",
-      startDate: _selectedDateRange?.start.millisecondsSinceEpoch,
-      endDate: _selectedDateRange?.end.millisecondsSinceEpoch,
+      startDate: _selectedDateRange != null
+          ? Timestamp.fromMillisecondsSinceEpoch(_selectedDateRange!.start.millisecondsSinceEpoch)
+          : null,
+      endDate: _selectedDateRange != null
+          ? Timestamp.fromMillisecondsSinceEpoch(_selectedDateRange!.end.millisecondsSinceEpoch)
+          : null,
       sortBy: _sortBy,
     );
   });
 }
+
 
 
   @override
@@ -263,7 +277,7 @@ void fetchExpenses() {
                               itemCount: expenses.length,
                               itemBuilder: (context, index) {
                                 final expense = expenses[index];
-                                final dateString = _formatDate(expense.date);
+                                // final dateString = _formatDate(expense.date);
 
                                 return ListTile(
                                   title: Text(
@@ -285,26 +299,26 @@ void fetchExpenses() {
                                         ),
                                       ),
                                       Text(
-                                        'Date: $dateString',
+                                        'Date: ${expense.date}',
                                         style: const TextStyle(
                                           color: Colors.black,
                                           fontSize: 14,
                                         ),
                                       ),
-                                      // Text(
-                                      //   'CreatedAt: ${expense.createdAt}',
-                                      //   style: const TextStyle(
-                                      //     color: Colors.black,
-                                      //     fontSize: 14,
-                                      //   ),
-                                      // ),
-                                      // Text(
-                                      //   'UpdatedAt: ${expense.updatedAt}',
-                                      //   style: const TextStyle(
-                                      //     color: Colors.black,
-                                      //     fontSize: 14,
-                                      //   ),
-                                      // ),
+                                      Text(
+                                        'CreatedAt: ${expense.createdAt}',
+                                        style: const TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                      Text(
+                                        'UpdatedAt: ${expense.updatedAt}',
+                                        style: const TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 14,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                   trailing: Row(

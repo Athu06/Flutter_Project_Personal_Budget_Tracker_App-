@@ -1,9 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:budget_app/screens/dashboard_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import '../models/expense_models.dart';
 import '../services/api_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';  // For Firestore
 
 class ExpenseDetailScreen extends StatefulWidget {
   final ExpenseData? expense; // Optional parameter for editing
@@ -19,10 +18,8 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
   final ApiService apiService = ApiService();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
-  final TextEditingController _dateController =
-      TextEditingController(); // Controller for date
-  final TextEditingController _customCategoryController =
-      TextEditingController(); // Controller for custom category
+  final TextEditingController _dateController = TextEditingController(); // Controller for date
+  final TextEditingController _customCategoryController = TextEditingController(); // Controller for custom category
 
   late DateTime _selectedDate;
   late String _selectedCategory;
@@ -45,7 +42,7 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
     if (widget.expense != null) {
       _descriptionController.text = widget.expense!.description;
       _amountController.text = widget.expense!.amount.toString();
-      _selectedDate = widget.expense!.date;
+      _selectedDate = widget.expense!.date.toDate();  // Ensure this is a DateTime object
       _selectedCategory = widget.expense!.category;
     } else {
       _selectedDate = DateTime.now();
@@ -54,49 +51,41 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
     _dateController.text = _selectedDate.toLocal().toString().split(' ')[0];
   }
 
-  void _saveExpense() async {
-    if (_formKey.currentState!.validate()) {
-      final expenseData = {
-        "category": _selectedCategory == "Other"
-            ? _customCategoryController.text
-            : _selectedCategory,
-        "description": _descriptionController.text,
-        "amount": double.parse(_amountController.text),
-        "date": Timestamp.fromDate(_selectedDate).millisecondsSinceEpoch
-      };
+Future<void> _saveExpense() async {
+  if (_formKey.currentState!.validate()) {
+    // Create the expense data with the ID and other fields
+    final expenseData = {
+      "category": _selectedCategory == "Other"
+          ? _customCategoryController.text
+          : _selectedCategory,
+      "description": _descriptionController.text,
+      "amount": double.parse(_amountController.text),
+      "date": FieldValue.serverTimestamp(),  // Use Firestore's server timestamp
+      "createdAt": FieldValue.serverTimestamp(),
+      "updatedAt": FieldValue.serverTimestamp(),
+    };
 
-      try {
-        if (widget.expense != null) {
-          // Update existing expense
-          await apiService.updateExpense(widget.expense!.id, expenseData);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Expense Updated')),
-          );
-        } else {
-          // Add new expense
-          final response = await http.post(
-            Uri.parse('${apiService.baseUrl}/expense'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode(expenseData),
-          );
+    try {
+      // Add the expense to Firestore and get the document reference
+      DocumentReference docRef = await FirebaseFirestore.instance
+          .collection('expenses')
+          .add(expenseData);
 
-          if (response.statusCode == 201) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Expense Saved')),
-            );
-            setState(() {}); // Refresh UI after save
-          } else {
-            throw Exception('Failed to add expense');
-          }
-        }
+      // Get the document ID
+      String expenseId = docRef.id;
+      print('Expense saved with ID: $expenseId');
 
-        Navigator.pop(context, true); // Return success
-      } catch (error) {
-        print("Error saving expense: $error");
-        _showErrorDialog("Error saving expense: $error");
-      }
+      // If you want to update the expense with the ID (optional)
+      await docRef.update({'id': expenseId});
+
+      print('Expense saved successfully with ID: $expenseId');
+    } catch (e) {
+      print('Error saving expense: $e');
+      // Handle error (show a dialog or something)
     }
   }
+}
+
 
   void _showErrorDialog(String message) {
     showDialog(
@@ -195,12 +184,23 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                 onTap: _selectDate,
               ),
               const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _saveExpense,
-                child: Text(
-                  widget.expense != null ? 'Update Expense' : 'Save Expense',
-                ),
-              ),
+             ElevatedButton(
+  onPressed: () async {
+    // Save the expense first
+    await _saveExpense(); // Wait for the save to complete
+
+    // After saving the expense, navigate to the DashboardScreen
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const DashboardScreen()),
+    );
+  },
+  child: Text(
+    widget.expense != null ? 'Update Expense' : 'Save Expense',
+  ),
+)
+
+
             ],
           ),
         ),

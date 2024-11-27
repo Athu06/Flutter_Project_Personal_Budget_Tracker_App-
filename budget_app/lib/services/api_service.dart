@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import '../models/expense_models.dart';
 
@@ -9,38 +10,49 @@ class ApiService {
 /// Fetch expenses with filters (category, date range, sorting)
 Future<List<ExpenseData>> getExpenses({
   String expenseType = "All",
-  int? startDate,
-  int? endDate,
+  Timestamp? startDate,
+  Timestamp? endDate,
   String? sortBy,
 }) async {
   try {
+    // Base URL for API
+    String baseUrl = 'https://us-central1-stemious-hands-on-task.cloudfunctions.net/api/expenses';
+
     // Construct query parameters
     final Map<String, String> queryParameters = {
       if (expenseType != "All") 'expenseType': expenseType,
-      if (startDate != null) 'startDate': startDate.toString(),
-      if (endDate != null) 'endDate': endDate.toString(),
-      if (sortBy != null) 'sortBy': sortBy,
+      if (startDate != null) 'startDate': startDate.toDate().toIso8601String(),
+      if (endDate != null) 'endDate': endDate.toDate().toIso8601String(),
+      if (sortBy != null) 'sortBy': sortBy, // Sort parameter
     };
 
-    final Uri uri = Uri.parse('$baseUrl/expenses').replace(queryParameters: queryParameters);
+    // If no parameters are passed, use the default sortBy
+    if (queryParameters.isEmpty && sortBy == null) {
+      queryParameters['sortBy'] = 'date_desc';
+    }
+
+    // Construct final URI with query parameters
+    final Uri uri = Uri.parse(baseUrl).replace(queryParameters: queryParameters);
 
     print('Fetching expenses with URL: $uri');
-
-    // Make the GET request
+    
+    // Make the API request
     final response = await http.get(uri);
 
+    List<ExpenseData> parseExpenseData(String responseBody) {
+      final parsed = json.decode(responseBody).cast<Map<String, dynamic>>();
+      return parsed.map<ExpenseData>((json) => ExpenseData.fromJson(json)).toList();
+    }
+
+    // Handle response
     if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
-      return data.map((expense) => ExpenseData.fromJson(expense)).toList();
+      // Parse and return expenses
+      return parseExpenseData(response.body);
     } else {
-      // Log the error and provide a fallback
-      print('Error fetching expenses: ${response.statusCode} - ${response.body}');
-      throw Exception('Failed to fetch expenses');
+      throw Exception('Failed to load expenses');
     }
   } catch (e) {
-    // Log the error and handle it gracefully
-    print('Error occurred while fetching expenses: $e');
-    // Return an empty list or provide an error message for UI handling
+    print('Error fetching expenses: $e');
     return [];
   }
 }
