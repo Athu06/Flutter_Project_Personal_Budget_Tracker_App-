@@ -1,6 +1,5 @@
 import 'package:budget_app/firebase_options.dart';
 import 'package:budget_app/screens/auth.dart';
-import 'package:budget_app/screens/filter_screen.dart';
 import 'package:flutter/material.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/expense_detail_screen.dart';
@@ -26,7 +25,6 @@ class BudgetTrackerApp extends StatelessWidget {
         // '/': (context) => const Auth(),
         '/': (context) => const DashboardScreen(),
         '/expenseDetail': (context) => const ExpenseDetailScreen(),
-        '/filterScreen' : (context) => const FilterScreen(),
       },
     );
   }
