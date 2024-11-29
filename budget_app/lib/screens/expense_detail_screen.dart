@@ -1,8 +1,7 @@
-import 'package:budget_app/screens/dashboard_screen.dart';
 import 'package:flutter/material.dart';
 import '../models/expense_models.dart';
 import '../services/api_service.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';  // For Firestore
+
 
 class ExpenseDetailScreen extends StatefulWidget {
   final ExpenseData? expense; // Optional parameter for editing
@@ -18,8 +17,10 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
   final ApiService apiService = ApiService();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
-  final TextEditingController _dateController = TextEditingController(); // Controller for date
-  final TextEditingController _customCategoryController = TextEditingController(); // Controller for custom category
+  final TextEditingController _dateController =
+      TextEditingController(); // Controller for date
+  final TextEditingController _customCategoryController =
+      TextEditingController(); // Controller for custom category
 
   late DateTime _selectedDate;
   late String _selectedCategory;
@@ -42,7 +43,7 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
     if (widget.expense != null) {
       _descriptionController.text = widget.expense!.description;
       _amountController.text = widget.expense!.amount.toString();
-      _selectedDate = widget.expense!.date.toDate();  // Ensure this is a DateTime object
+      _selectedDate = widget.expense!.date.toDate();
       _selectedCategory = widget.expense!.category;
     } else {
       _selectedDate = DateTime.now();
@@ -51,41 +52,59 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
     _dateController.text = _selectedDate.toLocal().toString().split(' ')[0];
   }
 
-Future<void> _saveExpense() async {
+  Future<void> _selectDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+        _dateController.text = _selectedDate
+            .toLocal()
+            .toString()
+            .split(' ')[0]; // Update the displayed date
+      });
+    }
+  }
+
+void _saveExpense() async {
   if (_formKey.currentState!.validate()) {
-    // Create the expense data with the ID and other fields
     final expenseData = {
       "category": _selectedCategory == "Other"
           ? _customCategoryController.text
           : _selectedCategory,
       "description": _descriptionController.text,
       "amount": double.parse(_amountController.text),
-      "date": FieldValue.serverTimestamp(),  // Use Firestore's server timestamp
-      "createdAt": FieldValue.serverTimestamp(),
-      "updatedAt": FieldValue.serverTimestamp(),
+      "date": _selectedDate.millisecondsSinceEpoch,
     };
 
     try {
-      // Add the expense to Firestore and get the document reference
-      DocumentReference docRef = await FirebaseFirestore.instance
-          .collection('expenses')
-          .add(expenseData);
+      if (widget.expense != null) {
+        // Update existing expense using the ID via API (you can add an API for update if needed)
+        expenseData["id"] = widget.expense!.id;
+        await apiService.updateExpense(widget.expense!.id, expenseData); // Call your API update method
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Expense Updated')),
+        );
+      } else {
+        // Add new expense via your API
+        await apiService.addExpense(expenseData); // Call your addExpense API method
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Expense Saved')),
+        );
+      }
 
-      // Get the document ID
-      String expenseId = docRef.id;
-      print('Expense saved with ID: $expenseId');
-
-      // If you want to update the expense with the ID (optional)
-      await docRef.update({'id': expenseId});
-
-      print('Expense saved successfully with ID: $expenseId');
-    } catch (e) {
-      print('Error saving expense: $e');
-      // Handle error (show a dialog or something)
+      Navigator.pop(context, true); // Return success
+    } catch (error) {
+      print("Error saving expense: $error");
+      _showErrorDialog("Error saving expense: $error");
     }
   }
 }
-
 
   void _showErrorDialog(String message) {
     showDialog(
@@ -184,46 +203,16 @@ Future<void> _saveExpense() async {
                 onTap: _selectDate,
               ),
               const SizedBox(height: 20),
-             ElevatedButton(
-  onPressed: () async {
-    // Save the expense first
-    await _saveExpense(); // Wait for the save to complete
-
-    // After saving the expense, navigate to the DashboardScreen
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const DashboardScreen()),
-    );
-  },
-  child: Text(
-    widget.expense != null ? 'Update Expense' : 'Save Expense',
-  ),
-)
-
-
+              ElevatedButton(
+                onPressed: _saveExpense,
+                child: Text(
+                  widget.expense != null ? 'Update Expense' : 'Save Expense',
+                ),
+              ),
             ],
           ),
         ),
       ),
     );
-  }
-
-  // Date picker function
-  Future<void> _selectDate() async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-    );
-    if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-        _dateController.text = _selectedDate
-            .toLocal()
-            .toString()
-            .split(' ')[0]; // Update the displayed date
-      });
-    }
   }
 }

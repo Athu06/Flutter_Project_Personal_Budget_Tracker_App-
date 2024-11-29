@@ -22,8 +22,8 @@ class BudgetTrackerApp extends StatelessWidget {
       theme: ThemeData(primarySwatch: Colors.blue),
       initialRoute: '/',
       routes: {
-        // '/': (context) => const Auth(),
-        '/': (context) => const DashboardScreen(),
+        '/': (context) => const Auth(),
+        '/dashboardScreen': (context) => const DashboardScreen(),
         '/expenseDetail': (context) => const ExpenseDetailScreen(),
       },
     );

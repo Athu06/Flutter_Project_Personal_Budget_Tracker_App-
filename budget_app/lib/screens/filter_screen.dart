@@ -38,7 +38,8 @@
 //   void fetchExpenses() {
 //     setState(() {
 //       expensesFuture = apiService.getExpenses(
-//         expenseType: _selectedCategory != 'All' ? _selectedCategory : "All",
+//         expenseType: 
+// != 'All' ? _selectedCategory : "All",
 //         startDate: _selectedDateRange?.start.millisecondsSinceEpoch,
 //         endDate: _selectedDateRange?.end.millisecondsSinceEpoch,
 //         sortBy: _sortBy,

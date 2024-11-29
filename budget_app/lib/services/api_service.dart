@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import '../models/expense_models.dart';
 
@@ -10,8 +9,8 @@ class ApiService {
 /// Fetch expenses with filters (category, date range, sorting)
 Future<List<ExpenseData>> getExpenses({
   String expenseType = "All",
-  Timestamp? startDate,
-  Timestamp? endDate,
+  int? startDate,
+  int? endDate,
   String? sortBy,
 }) async {
   try {
@@ -21,8 +20,8 @@ Future<List<ExpenseData>> getExpenses({
     // Construct query parameters
     final Map<String, String> queryParameters = {
       if (expenseType != "All") 'expenseType': expenseType,
-      if (startDate != null) 'startDate': startDate.toDate().toIso8601String(),
-      if (endDate != null) 'endDate': endDate.toDate().toIso8601String(),
+      if (startDate != null) 'startDate': startDate.toString(),
+      if (endDate != null) 'endDate': endDate.toString(),
       if (sortBy != null) 'sortBy': sortBy, // Sort parameter
     };
 
@@ -35,19 +34,20 @@ Future<List<ExpenseData>> getExpenses({
     final Uri uri = Uri.parse(baseUrl).replace(queryParameters: queryParameters);
 
     print('Fetching expenses with URL: $uri');
-    
-    // Make the API request
+
+    // Make the API request (you can replace this with your actual API call)
     final response = await http.get(uri);
+// print("Response received");
+// print(response.body);
+// print(response.statusCode);
 
-    List<ExpenseData> parseExpenseData(String responseBody) {
-      final parsed = json.decode(responseBody).cast<Map<String, dynamic>>();
-      return parsed.map<ExpenseData>((json) => ExpenseData.fromJson(json)).toList();
-    }
 
-    // Handle response
+    // Handle response (this is just an example; adjust based on your actual API response)
     if (response.statusCode == 200) {
       // Parse and return expenses
+      // print(response.body);
       return parseExpenseData(response.body);
+      
     } else {
       throw Exception('Failed to load expenses');
     }
@@ -56,7 +56,6 @@ Future<List<ExpenseData>> getExpenses({
     return [];
   }
 }
-
 
   /// Update an existing expense
   Future<void> updateExpense(String id, Map<String, dynamic> expenseData) async {
@@ -102,7 +101,7 @@ Future<List<ExpenseData>> getExpenses({
   /// Add a new expense
   Future<void> addExpense(Map<String, dynamic> expenseData) async {
     try {
-      final Uri uri = Uri.parse('$baseUrl/expenses');
+      final Uri uri = Uri.parse('$baseUrl/expense');
       final response = await http.post(
         uri,
         headers: {'Content-Type': 'application/json'},
@@ -120,4 +119,9 @@ Future<List<ExpenseData>> getExpenses({
       throw Exception('Error adding expense');
     }
   }
+
+List<ExpenseData> parseExpenseData(String responseBody) {
+      final parsed = json.decode(responseBody).cast<Map<String, dynamic>>();
+      return parsed.map<ExpenseData>((json) => ExpenseData.fromJson(json)).toList();
+    }
 }

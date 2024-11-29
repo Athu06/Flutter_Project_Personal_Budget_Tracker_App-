@@ -31,7 +31,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String _selectedCategory = 'All';
   String _sortBy = 'amount_asc'; // Default sorting by amount
 
- 
+String _formatDateTime(DateTime dateTime) {
+  // Get day of the week
+  const List<String> weekdays = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday'
+  ];
+  String dayOfWeek = weekdays[dateTime.weekday - 1];
+
+  // Format date as YYYY-MM-DD
+  String formattedDate =
+      '${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')}';
+
+  // Format time as HH:MM
+  String formattedTime =
+      '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+
+  // Combine date, time, and day
+  return '$formattedDate $formattedTime, $dayOfWeek';
+}
+
   @override
   void initState() {
     super.initState();
@@ -86,12 +110,8 @@ void fetchExpenses() {
   setState(() {
     expensesFuture = apiService.getExpenses(
       expenseType: _selectedCategory != 'All' ? _selectedCategory : "All",
-      startDate: _selectedDateRange != null
-          ? Timestamp.fromMillisecondsSinceEpoch(_selectedDateRange!.start.millisecondsSinceEpoch)
-          : null,
-      endDate: _selectedDateRange != null
-          ? Timestamp.fromMillisecondsSinceEpoch(_selectedDateRange!.end.millisecondsSinceEpoch)
-          : null,
+      startDate: _selectedDateRange?.start.millisecondsSinceEpoch,
+      endDate: _selectedDateRange?.end.millisecondsSinceEpoch,
       sortBy: _sortBy,
     );
   });
@@ -299,21 +319,24 @@ void fetchExpenses() {
                                         ),
                                       ),
                                       Text(
-                                        'Date: ${expense.date}',
+                                        // Format 'date' field
+                                        'Date: ${_formatDateTime((expense.date as Timestamp).toDate())}',
                                         style: const TextStyle(
                                           color: Colors.black,
                                           fontSize: 14,
                                         ),
                                       ),
                                       Text(
-                                        'CreatedAt: ${expense.createdAt}',
+                                        // Format 'createdAt' field
+                                        'CreatedAt: ${expense.createdAt != null ? _formatDateTime((expense.createdAt).toDate()) : 'N/A'}',
                                         style: const TextStyle(
                                           color: Colors.black,
                                           fontSize: 14,
                                         ),
                                       ),
                                       Text(
-                                        'UpdatedAt: ${expense.updatedAt}',
+                                        // Format 'updatedAt' field
+                                        'UpdatedAt: ${expense.updatedAt != null ? _formatDateTime((expense.updatedAt as Timestamp).toDate()) : 'N/A'}',
                                         style: const TextStyle(
                                           color: Colors.black,
                                           fontSize: 14,
