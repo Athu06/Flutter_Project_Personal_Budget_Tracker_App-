@@ -29,7 +29,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   DateTimeRange? _selectedDateRange;
   String _selectedCategory = 'All';
-  String _sortBy = 'amount_asc'; // Default sorting by amount
+  String _sortBy = 'date_desc';
+  final TextEditingController _customCategoryController = TextEditingController();
 
 String _formatDateTime(DateTime dateTime) {
   // Get day of the week
@@ -223,7 +224,7 @@ void fetchExpenses() {
                                 ),
                                 onPressed: () {
                                   // Navigate to the Auth screen
-                                  Navigator.push(
+                                  Navigator.pushReplacement(
                                     context,
                                     MaterialPageRoute(builder: (context) => const Auth()),
                                   );
@@ -246,6 +247,9 @@ void fetchExpenses() {
                           onChanged: (value) {
                             setState(() {
                               _selectedCategory = value!;
+                                if (_selectedCategory != 'Other') {
+                                  _customCategoryController.clear();
+                                }
                               fetchExpenses();
                             });
                           },

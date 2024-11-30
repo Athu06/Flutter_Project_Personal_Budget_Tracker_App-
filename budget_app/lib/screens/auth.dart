@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:budget_app/screens/dashboard_screen.dart';
-
+import 'package:flutter/services.dart';
 
 void main() {
   runApp(const Auth());
@@ -13,42 +13,56 @@ class Auth extends StatelessWidget {
 
 @override
 Widget build(BuildContext context) {
-  return MaterialApp(
-    debugShowCheckedModeBanner: false,
-    home: DefaultTabController(
-      length: 2, // Number of tabs
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Login & Signup'),
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Login'),
-              Tab(text: 'Signup'),
-            ],
-          ),
-        ),
-        body: Stack(
-          children: [
-            Positioned.fill(
-              child: Image.asset(
-                'assets/Budget.jpeg',
-                fit: BoxFit.cover,
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: DefaultTabController(
+        length: 2, // Number of tabs
+        child: Scaffold(
+          body: Center(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    'Personal Budget Tracker',
+                    style: TextStyle(
+                      fontStyle: FontStyle.normal,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black, // You can choose any color you prefer
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  const TabBar(
+                    indicatorColor: Colors.blue,
+                    labelColor: Colors.black,
+                    unselectedLabelColor: Colors.grey,
+                    tabs: [
+                      Tab(text: 'Login'),
+                      Tab(text: 'Signup'),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Expanded(
+                    child: TabBarView(
+                      children: [
+                        LoginCard(),
+                        SignupCard(),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-            const TabBarView(
-              children: [
-                LoginCard(),
-                SignupCard(),
-              ],
-            ),
-          ],
+          ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
-}
 
 class LoginCard extends StatefulWidget {
   const LoginCard({Key? key}) : super(key: key);
@@ -153,6 +167,16 @@ class _LoginCardState extends State<LoginCard> {
                         },
                         child: const Text('Login'),
                       ),
+                      const SizedBox(height: 10),
+                    ElevatedButton(
+                      onPressed: () {
+                        DefaultTabController.of(context)?.animateTo(1);
+                      },
+                      child: const Text(
+                        'Create account',
+                        // style: TextStyle(color: Colors.black),r
+                      ),
+                    ),
               ],
             ),
           ),
@@ -177,39 +201,58 @@ class _SignupCardState extends State<SignupCard> {
   bool _isPasswordVisible = false; // Toggle visibility of the password
   bool _isLoading = false; // To track loading state
 
-  Future<void> _signUp() async {
-    setState(() {
-      _isLoading = true; // Start loading
+// Inside the SignupCard class
+
+Future<void> _signUp() async {
+  setState(() {
+    _isLoading = true; // Start loading
+  });
+  try {
+    // Create the user in Firebase Auth
+    UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      email: _emailController.text.trim(),
+      password: _passwordController.text.trim(),
+    );
+
+    // Get the user ID
+    String uid = userCredential.user!.uid;
+
+    // Save user data to Firestore
+    await FirebaseFirestore.instance.collection('users').doc(uid).set({
+      'full_name': _nameController.text.trim(),
+      'email': _emailController.text.trim(),
+      'uid': uid,
     });
+
+    // Firestore reference for the user's expenses document
+    DocumentReference documentReference = FirebaseFirestore.instance.collection("expenses").doc(uid);
+    
     try {
-      // Create the user in Firebase Auth
-      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
-
-      // Get the user ID
-      String uid = userCredential.user!.uid;
-
-      // Save user data to Firestore
-      await FirebaseFirestore.instance.collection('users').doc(uid).set({
-        'full_name': _nameController.text.trim(),
-        'email': _emailController.text.trim(),
-        'uid': uid,
-      });
-
-      // Show the updated SnackBar message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Signup successful! Now you can login.')),
-      );
- 
-
-    } finally {
-      setState(() {
-        _isLoading = false; // Stop loading
-      });
+      // Fetch the document snapshot
+      DocumentSnapshot docSnapshot = await documentReference.get();
+      if (docSnapshot.exists) {
+        print(docSnapshot.data());  // Logs the document's data
+      } else {
+        print("No such document!");
+      }
+    } catch (error) {
+      print("Error fetching document: $error");
     }
+
+    // Show the updated SnackBar message
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Signup successful! Now you can login.')),
+    );
+  } on FirebaseAuthException catch (e) {
+    // Handle Firebase authentication errors
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message ?? "Signup failed")));
+  } finally {
+    setState(() {
+      _isLoading = false; // Stop loading
+    });
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -280,8 +323,18 @@ class _SignupCardState extends State<SignupCard> {
                             _signUp();
                           }
                         },
-                        child: const Text('Signup'),
+                        child: const Text('Signup'),  
                       ),
+                      const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () {
+                  DefaultTabController.of(context)?.animateTo(0);
+                },
+                child: const Text(
+                  'Already have an account? Login',
+                  style: TextStyle(color: Colors.black),
+                ),
+              ),
               ],
             ),
           ),
