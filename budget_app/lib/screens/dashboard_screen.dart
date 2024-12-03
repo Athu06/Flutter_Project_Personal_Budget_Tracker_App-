@@ -1,3 +1,4 @@
+import 'package:budget_app/screens/admin.dart';
 import 'package:budget_app/screens/auth.dart';
 import 'package:budget_app/screens/expense_detail_screen.dart';
 import 'package:flutter/material.dart';
@@ -340,7 +341,8 @@ void fetchExpenses() {
                                       ),
                                       Text(
                                         // Format 'updatedAt' field
-                                        'UpdatedAt: ${expense.updatedAt != null ? _formatDateTime((expense.updatedAt as Timestamp).toDate()) : 'N/A'}',
+                                        'UpdatedAt: ${expense.updatedAt != null ? _formatDateTime((expense.updatedAt as Timestamp
+                                        ).toDate()) : 'N/A'}',
                                         style: const TextStyle(
                                           color: Colors.black,
                                           fontSize: 14,
@@ -401,11 +403,28 @@ void fetchExpenses() {
                   },
                 ),
               ),
-              
+              Align(
+                alignment: Alignment.bottomLeft,
+              child: ElevatedButton(
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all<Color>(Colors.blue), // Button background color
+                        foregroundColor: MaterialStateProperty.all<Color>(Colors.white), // Text color
+                      ),
+                      onPressed: () {
+                        // Navigate to the Admin screen
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const AdminPage()),
+                        );
+                      },
+                      child: const Text("AdminPage"),
+                    ),
+              )
                   ],
                 );
               
               }
+              
                
               return Container();
             },

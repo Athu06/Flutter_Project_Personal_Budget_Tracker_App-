@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/expense_detail_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'screens/admin.dart';
 
 
 void main() async {
@@ -25,6 +26,7 @@ class BudgetTrackerApp extends StatelessWidget {
         '/': (context) => const Auth(),
         '/dashboardScreen': (context) => const DashboardScreen(),
         '/expenseDetail': (context) => const ExpenseDetailScreen(),
+        '/adminPage':(context)=> const AdminPage(),
       },
     );
   }
