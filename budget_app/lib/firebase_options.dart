@@ -53,12 +53,13 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyBmAsP4oPkaH4WC7xZLnbKOPbSXFXZdfA4',
-    appId: '1:822727262248:web:b2396319da0090cc40b51d',
-    messagingSenderId: '822727262248',
-    projectId: 'stemious-hands-on-task',
-    authDomain: 'stemious-hands-on-task.firebaseapp.com',
-    storageBucket: 'stemious-hands-on-task.firebasestorage.app',
-    measurementId: 'G-FTEBYMEZ4F',
+    apiKey: 'AIzaSyAxdOtKLOjXDchK0v1lBF-37FEfSJI8zWo',
+    appId: '1:115826231925:web:34197d5eaddbb1b71ac63c',
+    messagingSenderId: '115826231925',
+    projectId: 'stemious-test',
+    authDomain: 'stemious-test.firebaseapp.com',
+    databaseURL: 'https://stemious-test.firebaseio.com',
+    storageBucket: 'stemious-test.appspot.com',
+    measurementId: 'G-JPKTNL33S5',
   );
 }

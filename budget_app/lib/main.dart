@@ -1,3 +1,5 @@
+// ignore_for_file: unused_import
+
 import 'package:budget_app/firebase_options.dart';
 import 'package:budget_app/screens/auth.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +7,7 @@ import 'screens/dashboard_screen.dart';
 import 'screens/expense_detail_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'screens/admin.dart';
+import 'screens/test_screen.dart';
 
 
 void main() async {
@@ -23,11 +26,12 @@ class BudgetTrackerApp extends StatelessWidget {
       theme: ThemeData(primarySwatch: Colors.blue),
       initialRoute: '/',
       routes: {
-        '/': (context) => const Auth(),
-        '/dashboardScreen': (context) => const DashboardScreen(),
-        '/expenseDetail': (context) => const ExpenseDetailScreen(),
-        '/adminPage':(context)=> const AdminPage(),
-      },
+        // '/': (context) => const Auth(),
+        // '/dashboardScreen': (context) => const DashboardScreen(),
+        // '/expenseDetail': (context) => const ExpenseDetailScreen(),
+        // '/adminPage':(context)=> const AdminPage(),
+        '/': (context) => const CustomDataTable(),
+      },      
     );
   }
 }

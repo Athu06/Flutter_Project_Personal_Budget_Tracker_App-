@@ -46,7 +46,10 @@ dependencies:
   firebase_admin: ^0.3.0
   # firebase_core: ^2.16.0
   # firebase_auth: ^4.8.0
-
+  json_data_table:
+    git:
+      url: https://github.com/StemiousOrg/stemious_json_data_table.git
+      ref: 2.0.0-stemious_data_table
 
 
 
